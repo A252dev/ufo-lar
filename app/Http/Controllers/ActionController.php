@@ -2,12 +2,49 @@
 
 namespace App\Http\Controllers;
 
+// Imports
 use Illuminate\Http\Request;
 use Validator;
 use App\Models\UserBalance;
 
 class ActionController extends Controller
 {
+
+    public function addbalance(Request $request)
+    {
+
+        // Check the auth of User (Me)
+        if (!empty(auth()->user()['email'])) {
+
+            $userBalance = UserBalance::select()->where('email', '=', auth()->user()['email'])->first();
+
+            switch ($request['currency']) {
+                case 'AUD':
+                    $userBalance->AUD += $request['summa'];
+                    $userBalance->save();
+                    break;
+                default:
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Currency is not selected!',
+                    ]);
+            }
+
+            // Return the success message
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Balance ' . $request['summa'] . $request['currency'] . ' is successfully added!',
+            ]);
+
+        } else {
+
+            // Return message that user is not authorized
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User is not authorized!',
+            ]);
+        }
+    }
 
     public function transfer(Request $request)
     {
@@ -91,6 +128,7 @@ class ActionController extends Controller
             }
 
         } else {
+
             // Return message that user is not authorized
             return response()->json([
                 'status' => 'error',
