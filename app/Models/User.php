@@ -27,6 +27,14 @@ class User extends Authenticatable implements JWTSubject
         'password',
     ];
 
+    public function __construct($email, $firstName, $secondName, $password)
+    {
+        $this->email = $email;
+        $this->firstName = $firstName;
+        $this->secondName = $secondName;
+        $this->password = $password;
+    }
+
     /**
      * The attributes that should be hidden for serialization.
      *

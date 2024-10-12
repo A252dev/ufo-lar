@@ -31,19 +31,13 @@ class AuthController extends Controller
             ]);
         }
 
-        $user = new User();
-        $user->email = $request['email'];
-        $user->firstName = $request['firstName'];
-        $user->secondName = $request['secondName'];
-        $user->password = bcrypt($request['password']);
+        // Create a new user
+        $user = new User($request['email'], $request['firstName'], $request['secondName'], bcrypt($request['password']));
         $user->save();
 
-        $userBalance = new UserBalance();
-        $userBalance->email = $request['email'];
-        $userBalance->usd = 0.0;
-        $userBalance->eur = 0.0;
+        // Create a user balance
+        $userBalance = new UserBalance($request['email'], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         $userBalance->save();
-
 
         return response()->json([
             'status' => 'success',
