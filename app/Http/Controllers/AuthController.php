@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\UserBalance;
+
 use Illuminate\Http\Request;
 use Validator;
+use App\Models\User;
+use App\Models\UserBalance;
+
 
 class AuthController extends Controller
 {
@@ -42,10 +44,12 @@ class AuthController extends Controller
         $userBalance->eur = 0.0;
         $userBalance->save();
 
+
         return response()->json([
             'status' => 'success',
             'data' => $user
         ]);
+
     }
 
     public function login()
