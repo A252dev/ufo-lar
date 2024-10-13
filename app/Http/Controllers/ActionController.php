@@ -6,9 +6,38 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Validator;
 use App\Models\UserBalance;
+use Brick\Money\Money;
+use Brick\Math\RoundingMode;
 
 class ActionController extends Controller
 {
+
+    public function setBalanceAmount($currency, $value)
+    {
+        $getActualBalance = UserBalance::select()->where('email', '=', auth()->user()['email'])->first();
+        $getActualBalance->$currency = Money::of($value, $currency)->plus($value)->getAmount();
+        $getActualBalance->save();
+    }
+
+    public function getBalanceAmount()
+    {
+        return UserBalance::select()->where('email', '=', value: auth()->user()['email'])->first();
+    }
+
+    // Remove the My balance
+    public function removeBalanceAmount($currency, $amount)
+    {
+        $getActualBalance = UserBalance::select()->where('email', '=', auth()->user()['email'])->first();
+        $getActualBalance->$currency = Money::of($amount, $currency)->minus($amount)->getAmount();
+        $getActualBalance->save();
+    }
+
+    public function setBalanceToTargetUser($toEmail, $amount, $currency)
+    {
+        $getActualBalance = UserBalance::select()->where('email', '=', $toEmail)->first();
+        $getActualBalance->$currency = Money::of($amount, $currency)->plus($amount)->getAmount();
+        $getActualBalance->save();
+    }
 
     public function addbalance(Request $request)
     {
@@ -18,23 +47,21 @@ class ActionController extends Controller
 
             $userBalance = UserBalance::select()->where('email', '=', auth()->user()['email'])->first();
 
-            switch ($request['currency']) {
-                case 'AUD':
-                    $userBalance->AUD += $request['summa'];
-                    $userBalance->save();
-                    break;
-                default:
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Currency is not selected!',
-                    ]);
-            }
+            $this->setBalanceAmount($request['currency'], $request['summa']);
 
-            // Return the success message
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Balance ' . $request['summa'] . $request['currency'] . ' is successfully added!',
-            ]);
+            // If currency is not selected
+            if (empty($request['currency'])) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Currency is not selected!',
+                ]);
+            } else {
+                // Return the success message
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Balance ' . $request['summa'] . ' ' . $request['currency'] . ' is successfully added!',
+                ]);
+            }
 
         } else {
 
@@ -78,39 +105,8 @@ class ActionController extends Controller
                 $errorMessage = 'Not enough money';
 
                 // Tranfer money with currect currency
-                switch ($request['currency']) {
-                    case 'USD':
-                        if ($userBalance->USD <= 0 or $userBalance->USD < $request['summa']) {
-                            return response()->json([
-                                'status' => 'error',
-                                'message' => $errorMessage,
-                            ]);
-                        } else {
-                            $userBalance->USD -= $request['summa'];
-                            $targetUserBalance->USD += $request['summa'];
-                            $userBalance->save();
-                            $targetUserBalance->save();
-                        }
-                        break;
-                    case 'EUR':
-                        if ($userBalance->EUR <= 0 or $userBalance->EUR < $request['summa']) {
-                            return response()->json([
-                                'status' => 'error',
-                                'message' => $errorMessage,
-                            ]);
-                        } else {
-                            $userBalance->EUR -= $request['summa'];
-                            $targetUserBalance->EUR += $request['summa'];
-                            $userBalance->save();
-                            $targetUserBalance->save();
-                        }
-                        break;
-                    default:
-                        return response()->json([
-                            'status' => 'error',
-                            'message' => 'Currency is not selected!',
-                        ]);
-                }
+                $this->removeBalanceAmount($request['currency'], $request['amount']);
+                $this->setBalanceToTargetUser($request['toEmail'], $request['amount'], $request['currency']);
 
                 // Return the success message
                 return response()->json([

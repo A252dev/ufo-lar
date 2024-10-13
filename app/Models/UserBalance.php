@@ -39,7 +39,11 @@ class UserBalance extends Model
         'USD',
     ];
 
-    public function __construct($email, $AUD, $BRL, $CAD, $CNY, $CZK, $DKK, $EUR, $HKD, $HUF, $ILS, $JPY, $MYR, $MXN, $TWD, $NZD, $NOK, $PHP, $PLN, $GBP, $SGD, $SEK, $CHF, $THB, $USD)
+    public function __construct()
+    {
+    }
+
+    public function create($email, $AUD, $BRL, $CAD, $CNY, $CZK, $DKK, $EUR, $HKD, $HUF, $ILS, $JPY, $MYR, $MXN, $TWD, $NZD, $NOK, $PHP, $PLN, $GBP, $SGD, $SEK, $CHF, $THB, $USD)
     {
         $this->email = $email;
         $this->AUD = $AUD;
@@ -66,6 +70,8 @@ class UserBalance extends Model
         $this->CHF = $CHF;
         $this->THB = $THB;
         $this->USD = $USD;
+        
+        return $this;
     }
 
 }

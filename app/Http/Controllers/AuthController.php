@@ -32,11 +32,17 @@ class AuthController extends Controller
         }
 
         // Create a new user
-        $user = new User($request['email'], $request['firstName'], $request['secondName'], bcrypt($request['password']));
+        // $user = new User();
+        $user = User::create($request['email'], $request['firstName'], $request['secondName'], bcrypt($request['password']));
+        // $user->email = $request['email'];
+        // $user->firstName = $request['firstName'];
+        // $user->secondName = $request['secondName'];
+        // $user->password = bcrypt($request['password']);
         $user->save();
 
         // Create a user balance
-        $userBalance = new UserBalance($request['email'], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        $userBalance = UserBalance::create($request['email'], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        // $userBalance = new UserBalance();
         $userBalance->save();
 
         return response()->json([
