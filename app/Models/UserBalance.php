@@ -70,8 +70,6 @@ class UserBalance extends Model
         $this->CHF = $CHF;
         $this->THB = $THB;
         $this->USD = $USD;
-        
-        return $this;
     }
 
 }
