@@ -20,5 +20,6 @@ Route::group([
     Route::post('/user/index', [ProfileController::class, 'index'])->name('profile-index');
     Route::post('/user/transfer', [ActionController::class, 'transfer'])->name('profile-tranfer');
     Route::post('/user/addbalance', [ActionController::class, 'addbalance'])->name('profile-add-balance');
+    Route::post('/user/convert', [ActionController::class, 'convert'])->name('profile-convert');
 });
 

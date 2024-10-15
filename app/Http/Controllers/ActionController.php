@@ -12,31 +12,39 @@ use Brick\Math\RoundingMode;
 class ActionController extends Controller
 {
 
-    public function setBalanceAmount($currency, $value)
+    // Add the My balance
+    public function addBalanceAmount($currency, $amount)
     {
         $getActualBalance = UserBalance::select()->where('email', '=', auth()->user()['email'])->first();
-        $getActualBalance->$currency = Money::of($value, $currency)->plus($value)->getAmount();
+        $getActualBalance[$currency] = Money::of($getActualBalance[$currency], $currency)->plus($amount)->getAmount();
         $getActualBalance->save();
-    }
-
-    public function getBalanceAmount()
-    {
-        return UserBalance::select()->where('email', '=', value: auth()->user()['email'])->first();
     }
 
     // Remove the My balance
     public function removeBalanceAmount($currency, $amount)
     {
         $getActualBalance = UserBalance::select()->where('email', '=', auth()->user()['email'])->first();
-        $getActualBalance->$currency = Money::of($amount, $currency)->minus($amount)->getAmount();
-        $getActualBalance->save();
+        // dd($getActualBalance[$currency]);
+        // Check user balance on zero
+        if ($getActualBalance[$currency] <= 0 || $amount > $getActualBalance[$currency]) {
+            return null;
+        } else {
+            $getActualBalance[$currency] = Money::of($getActualBalance[$currency], $currency)->minus($amount)->getAmount();
+            $getActualBalance->save();
+        }
     }
 
+    // Set Balance to current User
     public function setBalanceToTargetUser($toEmail, $amount, $currency)
     {
         $getActualBalance = UserBalance::select()->where('email', '=', $toEmail)->first();
-        $getActualBalance->$currency = Money::of($amount, $currency)->plus($amount)->getAmount();
-        $getActualBalance->save();
+        // If target user not found
+        if (empty($getActualBalance)) {
+            return null;
+        } else {
+            $getActualBalance[$currency] = Money::of($getActualBalance[$currency], $currency)->plus($amount)->getAmount();
+            $getActualBalance->save();
+        }
     }
 
     public function addbalance(Request $request)
@@ -45,23 +53,14 @@ class ActionController extends Controller
         // Check the auth of User (Me)
         if (!empty(auth()->user()['email'])) {
 
-            $userBalance = UserBalance::select()->where('email', '=', auth()->user()['email'])->first();
+            // Add the balance
+            $this->addBalanceAmount($request['currency'], $request['amount']);
 
-            $this->setBalanceAmount($request['currency'], $request['summa']);
-
-            // If currency is not selected
-            if (empty($request['currency'])) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Currency is not selected!',
-                ]);
-            } else {
-                // Return the success message
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'Balance ' . $request['summa'] . ' ' . $request['currency'] . ' is successfully added!',
-                ]);
-            }
+            // Return the success message
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Balance ' . $request['amount'] . ' ' . $request['currency'] . ' is successfully added!',
+            ]);
 
         } else {
 
@@ -79,12 +78,14 @@ class ActionController extends Controller
         // Check the auth of User (Me)
         if (!empty(auth()->user()['email'])) {
 
+            // Validate the data
             $validate = Validator::make($request->all(), [
                 'toEmail' => 'required|email',
-                'summa' => 'required',
+                'amount' => 'required',
                 'currency' => 'required',
             ]);
 
+            // If data is invalid, return an error
             if ($validate->fails()) {
                 return response()->json([
                     'status' => 'error',
@@ -92,36 +93,15 @@ class ActionController extends Controller
                 ]);
             }
 
-            // Find the balance of target User
-            $targetUserBalance = UserBalance::select()->where('email', '=', $request['toEmail'])->first();
+            // Transfer money with currect currency
+            $this->removeBalanceAmount($request['currency'], $request['amount']);
+            $this->setBalanceToTargetUser($request['toEmail'], $request['amount'], $request['currency']);
 
-            // Check target User in database
-            if (!empty($targetUserBalance->email)) {
-
-                // Find the balance of Me
-                $userBalance = UserBalance::select()->where('email', '=', auth()->user()['email'])->first();
-
-                // Error message
-                $errorMessage = 'Not enough money';
-
-                // Tranfer money with currect currency
-                $this->removeBalanceAmount($request['currency'], $request['amount']);
-                $this->setBalanceToTargetUser($request['toEmail'], $request['amount'], $request['currency']);
-
-                // Return the success message
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'Transfer from ' . auth()->user()['email'] . ' to ' . $request['toEmail'] . ' in ' . $request['summa'] . ' ' . $request['currency'] . ' is completed!',
-                ]);
-
-            } else {
-
-                // Return the error message if user not found
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'User not found',
-                ]);
-            }
+            // Return the success message
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Transfer from ' . auth()->user()['email'] . ' to ' . $request['toEmail'] . ' in ' . $request['amount'] . ' ' . $request['currency'] . ' is completed!',
+            ]);
 
         } else {
 
@@ -132,6 +112,31 @@ class ActionController extends Controller
             ]);
         }
 
+    }
+
+    public function convert(Request $request)
+    {
+        // Remove the balance from my account
+        $this->removeBalanceAmount($request['fromCurrency'], $request['amount']);
+
+        // Set the converted balance
+        $this->addBalanceAmount(
+            $request['toCurrency'],
+            $this->getConvertedBalance($request['fromCurrency'], $request['toCurrency'], $request['amount'])
+        );
+
+        // Return the success message
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Currency from ' . $request['fromCurrency'] . ' to ' . $request['toCurrency'] . ' in ' . $request['amount'] . ' is successfully converted!',
+        ]);
+    }
+
+    public function getConvertedBalance($fromCurrency, $toCurrency, $amount)
+    {
+        $getActualData = file_get_contents("https://v6.exchangerate-api.com/v6/ce3ba77a89e6e5e13dcbaf76/latest/" . $fromCurrency);
+        $actualBalance = json_decode($getActualData, true)['conversion_rates'][$toCurrency];
+        return Money::of(round($actualBalance, 2), $toCurrency)->multipliedBy($amount);
     }
 
 }
