@@ -132,6 +132,7 @@ class ActionController extends Controller
         ]);
     }
 
+    // Get actual data using a API
     public function getConvertedBalance($fromCurrency, $toCurrency, $amount)
     {
         $getActualData = file_get_contents("https://v6.exchangerate-api.com/v6/ce3ba77a89e6e5e13dcbaf76/latest/" . $fromCurrency);
