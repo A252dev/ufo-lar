@@ -22,4 +22,3 @@ Route::group([
     Route::post('/user/addbalance', [ActionController::class, 'addbalance'])->name('profile-add-balance');
     Route::post('/user/convert', [ActionController::class, 'convert'])->name('profile-convert');
 });
-

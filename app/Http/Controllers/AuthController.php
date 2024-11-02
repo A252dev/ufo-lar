@@ -21,6 +21,7 @@ class AuthController extends Controller
             'email' => 'required|email',
             'firstName' => 'required',
             'secondName' => 'required',
+            'birthday' => 'required',
             'password' => 'required',
         ]);
 
@@ -37,6 +38,7 @@ class AuthController extends Controller
         $user->email = $request['email'];
         $user->firstName = $request['firstName'];
         $user->secondName = $request['secondName'];
+        $user->birthday = $request['birthday'];
         $user->password = bcrypt($request['password']);
         $user->save();
 
@@ -62,7 +64,7 @@ class AuthController extends Controller
         if (!$token = auth()->attempt($credentials)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unauthorised'
+                'message' => 'Invalid data'
             ]);
         }
 
